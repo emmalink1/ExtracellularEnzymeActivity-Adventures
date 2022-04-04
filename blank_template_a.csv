@@ -1,0 +1,9 @@
+Template,1,2,3,4,5,6,7,8,9,10,11,12
+A,BG_sub_blank,NAG_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB2.5,quench_MUB2.5,,,Hombl,Buf
+B,BG_sub_blank,NAG_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB2.5,quench_MUB2.5,,,Hombl,Buf
+C,BG_sub_blank,NAG_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB1.25,quench_MUB1.25,,,Hombl,Buf
+D,BG_sub_blank,NAG_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB1.25,quench_MUB1.25,,,Hombl,Buf
+E,P_sub_blank,Cello_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB0.625,quench_MUB0.625,,,Hombl,Buf
+F,P_sub_blank,Cello_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB0.625,quench_MUB0.625,,,Hombl,Buf
+G,P_sub_blank,Cello_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB0.16,quench_MUB0.16,,,Hombl,Buf
+H,P_sub_blank,Cello_sub_blank,BG_assay,P_assay,NAG_assay,Cello_assay,quench_MUB0.16,quench_MUB0.16,,,Hombl,Buf
