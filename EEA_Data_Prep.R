@@ -120,12 +120,12 @@ write.csv(EEAData2021_WMetadata, file = "2021DataWMetadata_NoCalculationsDone.cs
 
 ##Now, ready to calculate activities for each plate :) The workflow is to
 ## 1) Calculate means of reads for each plate, for each template type, and inspect for unreasonable variability 
-## 3) Calculate standard curve for A plate 
-## 4) Calculate standard curve for B plate 
-## 5) Calculate quench coefficient (slope A Plate STDS / slope B plate STDS)  
-## 6) Calculate net fluorescence 
-## 7) Calculate emission coefficient 
-## 8) Calculate activity and convert to desired units 
+## 2) Calculate standard curve for A plate 
+## 3) Calculate standard curve for B plate 
+## 4) Calculate quench coefficient (slope A Plate STDS / slope B plate STDS)  
+## 5) Calculate net fluorescence 
+## 6) Calculate emission coefficient 
+## 7) Calculate activity and convert to desired units 
 
 ### We are generally going to use the workflow of group_by factors and then perform a calculation   
 
@@ -139,6 +139,7 @@ plateMeans <- EEAData2021_WMetadata %>%
 ## Consider saving plateMeans as an intermediate data for QAQC reporting
 
 ## Optional QAQC evaluation:
+
 ##This part should be replaced with a function but I didn't get to it yet. Inspect averages for bad CV's (>10) and consider removing data points to improve CV. Note:I generally DONT do this level of data cleanup until after I've done initial data analaysis, if it looks like there are significant trends that a cleaner dataset might show better. If there's a really bad plate I'll rerun it
 badAverages <- plateMeans %>%
   filter(Template %in% c("quench_MUB0.16", "quench_MUB1.25", "quench_MUB0.625", "quench_MUB2.5"))
@@ -163,7 +164,7 @@ view(unique)
 
 
 ## 2) Calculate Standard Curve for A plates 
-### Note that we use the values in the presence of the homogenate (uncorrected) for this standard curve 
+### Note that we use the values in the presence of the homogenate (uncorrected) for standard curves
 
 ##Here, add quench concentration as a variable, and pull out the quench data into another dataset
 APlateSTD <- plateMeans %>%
@@ -240,6 +241,9 @@ ABSTDS <- merge(ASTDS, BSTDS, by = "Batch", all.x = TRUE)
 ### Calculate Quench Coefficient 
 ABSTDS$QuenchCoef <- ABSTDS$ASlope /ABSTDS$BSlope
   
+## Merge standard curves with plate means 
+PlateMeansReadsCurves <- merge(PlateMeansJustReads, ABSTDS)  
+
 
 ## 5) Calculate net flourescence ((Assay-homogenate Control)/Quench coefficient) - substrate control
 
@@ -252,6 +256,7 @@ HomogenateControl <- plateMeans %>%
 plateMeans <- merge(HomogenateControl, plateMeans, by = c("TYPE", "Plot", "Batch"))
 
 ## Add substrate blank average as a column (Substrate Control)
+### Note that there are 4 types of subtrate blank. To get it in the right row, we will add another id column (BG, P_, Ce, NA) to re-merge by
 plateMeans$TemplateShort <- str_sub(plateMeans$Template, 1, 2)
 
 SubstrateControl <- plateMeans %>%
@@ -260,30 +265,30 @@ SubstrateControl <- plateMeans %>%
   summarize(SubstrateControl = mean(PlateRead), TemplateShort = TemplateShort, .groups = "keep")
 
 SubstrateControl <- unique(SubstrateControl)
+# get rid of template column, makes merge cleaner
 SubstrateControl <- SubstrateControl[,c(2,3,5,6)]
 
 plateMeans <- merge(SubstrateControl, plateMeans, by = c("Plot", "Batch", "TemplateShort"))
 
-## Take unnecessary rows (std curve calcs) out of Plate Means 
+## Take unnecessary rows (plate reads for std curve calcs) out of Plate Means dataframe
 PlateMeansJustReads <- plateMeans %>%
   filter(Template %in% c("Cello_assay", "BG_assay", "NAG_assay", "P_assay"), .preserve = TRUE)
-
-## Merge standard curves with plate means 
-PlateMeansReadsCurves <- merge(PlateMeansJustReads, ABSTDS)  
 
 ## just need the averages of each enzyme type from each plate  
 PlateMeansReadsCurves <- PlateMeansReadsCurves[,-c(2,3, 5, 7:10, 19, 24)]
 PlateMeansReadsCurves <- distinct(PlateMeansReadsCurves)
 
+## Calculate fluorescence 
+
 PlateMeansReadsCurves$NetFlorescence <- ((PlateMeansReadsCurves$Template_Mean - PlateMeansReadsCurves$HomogenateControl)/PlateMeansReadsCurves$QuenchCoef) -PlateMeansReadsCurves$SubstrateControl
 
-## 7) Calculate the emission coefficient 
+## 6) Calculate the emission coefficient 
 ### emission coefficient = fluorescence/nmol = BSlope/Assay Volume
 ### assay volume units** are 250uL = 0.00025 L = 0.250 mL 
 
 PlateMeansReadsCurves$EmissionCoefficient <- PlateMeansReadsCurves$BSlope/ 0.250
 
-## 8) Activity 
+## 7) Activity 
 ## (nmol/g/hr) = (net fluoresence x buffer vol (ml)) / (Emission coefficient x homogenate volume (ml) x time (hr) x soil mass (g))
 ## buffer volume = 50 ml 
 ## homogenate volume = 0.2 ml
@@ -298,7 +303,6 @@ PlateMeansReadsCurves$Activity <- PlateMeansReadsCurves$Activity[,1]
 
 ## Export as an intermediate dataset 
 write.csv(PlateMeansReadsCurves, "/Users/emmalink/Documents/R/PARCE/Analysis 2020/EEA_Analysis /EEA_IntermediateDataFiles")
-
 
 
 
